@@ -400,10 +400,11 @@ Regeln:
 - "passend": NUR die 1 bis 3 Gewürze aus dem Vorrat, die am allerbesten zu genau diesem Gericht passen – nicht alles, was irgendwie passt. Bestes zuerst. Namen exakt wie im Vorrat geschrieben. Wenn nichts wirklich gut passt, gib eine leere Liste zurück.
 - "wann": wann/wie es ins Gericht kommt (kurz, z. B. "mit den Zwiebeln anrösten").
 - "menge": grobe Menge für ca. 4 Portionen.
+- "rezept": ein konkreter, alltagstauglicher Rezeptvorschlag für genau dieses Gericht (ca. 4 Portionen), in dem die Gewürze aus "passend" verwendet werden. Wenn oben schon ein ganzes Rezept steht, übernimm es und baue die Gewürze an der richtigen Stelle ein. "zutaten": 5 bis 14 Einträge mit Menge (die Gewürze aus dem Vorrat inklusive). "schritte": 3 bis 8 kurze Schritte; nenne darin, wann welches Gewürz dazukommt.
 Alles auf Deutsch, kurz und freundlich.
 
 Antworte ausschließlich mit JSON in dieser Form:
-{"passend":[{"name":"","warum":"","wann":"","menge":""}],"kurzfazit":""}`;
+{"passend":[{"name":"","warum":"","wann":"","menge":""}],"kurzfazit":"","rezept":{"titel":"","zeit":"","portionen":"","zutaten":[""],"schritte":[""]}}`;
   try{
     const r = await sample.json(prompt, { modelTier:"default" });
     renderResult(r, dish);
@@ -432,6 +433,15 @@ function renderResult(r, dish){
   if(ln.length){ h+=`<h2>Lieber nicht</h2><div class="card warn">${ln.map(x=>`<div style="margin:4px 0"><b>${esc(x.name)}</b> – ${esc(x.warum)}</div>`).join("")}</div>`; }
   const er=(r?.ergaenzung||[]).filter(x=>x?.name);
   if(er.length){ h+=`<h2>Fehlt dir noch</h2><div class="card">${er.map(x=>`<div style="margin:4px 0"><b>${esc(x.name)}</b> – ${esc(x.warum)}</div>`).join("")}</div>`; }
+  const rz=r?.rezept;
+  if(rz && ((rz.zutaten||[]).length || (rz.schritte||[]).length)){
+    h+=`<h2>🍳 Rezeptvorschlag</h2><div class="idea"><h3>${esc(rz.titel||dish)}</h3>
+      ${rz.zeit||rz.portionen?`<div class="meta">${[rz.zeit&&`⏱ ${esc(rz.zeit)}`, rz.portionen&&`🍽 ${esc(rz.portionen)}`].filter(Boolean).map(m=>`<span>${m}</span>`).join("")}</div>`:""}
+      <details open><summary>Zutaten &amp; Zubereitung</summary>
+        <ul>${(rz.zutaten||[]).map(z=>`<li>${esc(z)}</li>`).join("")}</ul>
+        <ol>${(rz.schritte||[]).map(z=>`<li>${esc(z)}</li>`).join("")}</ol>
+      </details></div>`;
+  }
   $("#result").innerHTML = h;
 }
 $("#result").onclick = e=>{
