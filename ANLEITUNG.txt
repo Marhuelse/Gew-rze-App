@@ -1,0 +1,36 @@
+GEWÜRZ-KOMPASS – so bringst du die App aufs Handy
+=================================================
+
+1) API-Schlüssel holen
+   - console.anthropic.com öffnen, Konto anlegen, unter "Billing" ein paar Euro Guthaben aufladen
+   - unter "API Keys" einen Schlüssel erstellen und kopieren (beginnt mit sk-ant-)
+
+2) App online stellen (kostenlos, z. B. mit GitHub Pages)
+   - auf github.com ein Konto anlegen
+   - neues Repository "gewuerz-kompass" anlegen (Public)
+   - "Add file" > "Upload files": ALLE Dateien aus diesem Ordner hochladen > "Commit changes"
+   - Settings > Pages > Branch "main" / Ordner "/ (root)" > Save
+   - nach 1–2 Minuten läuft die App unter https://DEINNAME.github.io/gewuerz-kompass/
+
+3) Schlüssel einrichten – ohne Tippen in der App (Einrichtungs-Link)
+   - Hänge an deine App-Adresse  #key=  und deinen Schlüssel an, z. B.:
+       https://DEINNAME.github.io/gewuerz-kompass/#key=sk-ant-api03-xxxxxxxx
+     (die App nutzt automatisch das günstige Modell Claude Haiku 5.5)
+   - Diesen Link EINMAL in Chrome auf dem Handy öffnen (z. B. per Mail an dich selbst
+     schicken oder am PC einen QR-Code daraus machen und abscannen)
+   - Die App speichert den Schlüssel, löscht ihn sofort aus der Adresse und testet die
+     Verbindung: "✅ Fertig eingerichtet". Danach Link/Mail/QR-Code wieder löschen.
+   - Der Teil nach dem # wird nie an GitHub oder einen Server geschickt – er bleibt im Browser.
+   (Alternativ geht weiterhin: Einstellungen > Schlüssel einfügen > "Speichern & testen")
+
+4) Installieren
+   - in Chrome: Menü (⋮) > "App installieren" bzw. "Zum Startbildschirm hinzufügen"
+   - App öffnen > Einstellungen > "Vorrat übernehmen": die kopierte Liste aus der alten App einfügen
+
+5) Sicherheit
+   - In der Anthropic Console unter "Limits" eine monatliche Ausgabengrenze setzen (z. B. 5 €)
+   - Den Schlüssel NIE in eine Datei im GitHub-Repository schreiben – nur über den Link/das Feld
+
+Wichtig: Der Schlüssel bleibt nur auf deinem Handy. Gib die App-Adresse ruhig weiter –
+jeder muss dort seinen eigenen Schlüssel eintragen. Deine Daten liegen nur auf dem Gerät,
+also ab und zu unter Einstellungen > "Sicherung speichern".
