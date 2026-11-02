@@ -98,6 +98,12 @@
   .empty{text-align:center;padding:24px 10px}
   .empty .big{font-size:42px}
   details summary{cursor:pointer;font-weight:600}
+  .cam{position:fixed;inset:0;background:#000;z-index:20;display:flex;flex-direction:column}
+  .cam.hidden{display:none}
+  .cam video{flex:1;min-height:0;width:100%;object-fit:cover;background:#000}
+  .cam .bar{display:flex;align-items:center;justify-content:space-around;padding:18px 12px calc(18px + env(safe-area-inset-bottom))}
+  .cam .round{width:52px;height:52px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:22px;cursor:pointer}
+  .cam .shot{width:74px;height:74px;border-radius:50%;border:5px solid #fff;background:rgba(255,255,255,.35);cursor:pointer}
   .filebtn{position:relative;overflow:hidden}
   .filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
   .preview{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
@@ -247,6 +253,8 @@
 </nav>
 <div class="toast" id="toast"></div>
 
+<div class="cam hidden" id="cam"><video id="camV" autoplay playsinline muted></video>
+  <div class="bar"><button class="round" id="camX" aria-label="Schließen">✕</button><button class="shot" id="camShot" aria-label="Foto aufnehmen"></button><button class="round" id="camFlip" aria-label="Kamera wechseln">⟲</button></div></div>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -820,6 +828,33 @@ try{ navigator.storage?.persist?.(); }catch(_){}
 refreshAI();
 if(!getKey() && state.spices.length) $("#noai").classList.remove("hidden");
 if("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+/* ---------- Kamera (Rückkamera erzwingen) ---------- */
+// capture="environment" ist nur ein Hinweis – viele Android-Kamera-Apps öffnen trotzdem die zuletzt genutzte (Selfie-)Kamera.
+// Darum öffnen wir die Kamera direkt in der App. Klappt das nicht, geht es wie bisher über die System-Kamera.
+let camStream=null, camInput=null, camFacing="environment", camOff=false;
+async function camStart(){
+  if(camStream) camStream.getTracks().forEach(t=>t.stop());
+  const base={width:{ideal:1920},height:{ideal:1440}};
+  try{ camStream=await navigator.mediaDevices.getUserMedia({video:{...base,facingMode:{exact:camFacing}},audio:false}); }
+  catch(e){ camStream=await navigator.mediaDevices.getUserMedia({video:{...base,facingMode:{ideal:camFacing}},audio:false}); }
+  $("#camV").srcObject=camStream;
+}
+function camStop(){ if(camStream) camStream.getTracks().forEach(t=>t.stop()); camStream=null; $("#camV").srcObject=null; $("#cam").classList.add("hidden"); }
+document.querySelectorAll("input[capture]").forEach(inp=>inp.addEventListener("click", async e=>{
+  if(camOff||!navigator.mediaDevices?.getUserMedia) return;
+  e.preventDefault(); camInput=inp; camFacing="environment";
+  try{ await camStart(); $("#cam").classList.remove("hidden"); }
+  catch(err){ camStop(); camOff=true; inp.click(); }
+}));
+$("#camX").onclick=camStop;
+$("#camFlip").onclick=async()=>{ camFacing=camFacing==="environment"?"user":"environment"; try{ await camStart(); }catch(e){ toast("Kamera konnte nicht gewechselt werden"); } };
+$("#camShot").onclick=()=>{
+  const v=$("#camV"); if(!v.videoWidth) return;
+  const c=document.createElement("canvas"); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext("2d").drawImage(v,0,0);
+  const inp=camInput; camStop();
+  c.toBlob(b=>{ if(!b||!inp?.onchange) return; const f=new File([b],"foto.jpg",{type:"image/jpeg"}); inp.onchange({target:{files:[f],value:""}}); },"image/jpeg",.92);
+};
 </script>
 </body>
 </html>
