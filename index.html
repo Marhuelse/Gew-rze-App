@@ -107,6 +107,11 @@
   .filebtn{position:relative;overflow:hidden}
   .filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
   .preview{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .rbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}.rbar .btn{margin-top:0}
+  .btn.saved{background:var(--herb);color:#fff}
+  .rsrc{display:inline-block;background:var(--soft);color:var(--muted);font:600 11px Inter;border-radius:6px;padding:2px 7px;margin-bottom:6px}
+  .rraw{white-space:pre-wrap;font-size:14px;margin:6px 0 0}
+  .chip.sel{background:var(--paprika);border-color:var(--paprika);color:#fff}
   .preview label{display:flex;align-items:center;gap:6px;background:var(--soft);border-radius:10px;padding:6px 10px;font-size:14px}
 </style>
 </head>
@@ -151,6 +156,27 @@
       <p class="muted" id="heftCount" style="margin:10px 0 0;font-size:13px"></p>
     </div>
     <div id="ideaOut" class="res"></div>
+  </section>
+
+  <!-- REZEPTE -->
+  <section id="v-recipes" class="hidden">
+    <div class="card">
+      <b id="rzCount">Meine Rezepte</b>
+      <input type="text" id="rzFilter" placeholder="Rezept, Zutat oder Gewürz suchen …" style="margin-top:10px" autocomplete="off">
+      <div class="chips" id="rzSrc"></div>
+    </div>
+    <div id="rzList"></div>
+    <div class="card">
+      <details id="rzAdd">
+        <summary>✍️ Eigenes Rezept einfügen</summary>
+        <p class="muted" style="margin:8px 0">Füge ein Rezept ein – z. B. den Text eines Instagram-Beitrags, einer Website oder deine eigenen Notizen.</p>
+        <textarea id="rzText" placeholder="Rezepttext hier einfügen …" style="min-height:110px"></textarea>
+        <input type="text" id="rzLink" placeholder="Link zum Original (optional)" style="margin-top:8px" autocomplete="off" inputmode="url">
+        <button class="btn" id="rzAi">Mit KI übernehmen</button>
+        <button class="btn ghost" id="rzPlain">Ohne KI so speichern</button>
+        <div id="rzAiOut"></div>
+      </details>
+    </div>
   </section>
 
   <!-- VORRAT -->
@@ -248,6 +274,7 @@
 <nav>
   <button class="on" data-v="cook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M8 7c0-1 1-1.5 1-2.5M12 7c0-1 1-1.5 1-2.5M16 7c0-1 1-1.5 1-2.5"/></svg>Kochen</button>
   <button data-v="ideas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>Rezeptideen</button>
+  <button data-v="recipes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v16H5.5A1.5 1.5 0 0 0 4 20.5z"/><path d="M4 20.5A1.5 1.5 0 0 0 5.5 22H20v-3"/><path d="M9 8h7M9 12h5"/></svg>Rezepte<span class="badge hidden" id="navRz"></span></button>
   <button data-v="pantry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="7" width="12" height="14" rx="2"/><path d="M8 3h8v4H8z"/><path d="M9 13h6"/></svg>Vorrat<span class="badge hidden" id="navCount"></span></button>
   <button data-v="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Einstellungen</button>
 </nav>
@@ -456,12 +483,16 @@ function renderResult(r, dish){
       <details open><summary>Zutaten &amp; Zubereitung</summary>
         <ul>${(rz.zutaten||[]).map(z=>`<li>${esc(z)}</li>`).join("")}</ul>
         <ol>${(rz.schritte||[]).map(z=>`<li>${esc(z)}</li>`).join("")}</ol>
-      </details></div>`;
+      </details>${saveBtn(rz.titel||dish, "cookSave")}</div>`;
   }
   $("#result").innerHTML = h;
   setLast("cook", {r, dish});
 }
 $("#result").onclick = e=>{
+  const cs=e.target.closest("[data-cooksave]");
+  if(cs){ const l=getLast().cook; const rz=l?.r?.rezept; if(!rz) return;
+    const p=(l.r.passend||[]).map(x=>findSpice(x.name)?.name).filter(Boolean);
+    storeRecipe({ titel: rz.titel||l.dish, zeit: rz.zeit, portionen: rz.portionen, zutaten: rz.zutaten, schritte: rz.schritte, gewuerze: p, quelle:"KI-Vorschlag" }, cs); return; }
   const b=e.target.closest("[data-use]"); if(!b) return;
   const s=state.spices.find(x=>x.id===b.dataset.use); if(!s) return;
   if(b.classList.toggle("on")){ s.used=(s.used||0)+1; s.prevLast=s.last; s.last=Date.now(); b.textContent="✓ Genommen"; }
@@ -560,10 +591,12 @@ function ideaCard(i){
       <ul>${(i.zutaten||[]).map(z=>`<li>${esc(z)}</li>`).join("")}</ul>
       <ol>${(i.schritte||[]).map(z=>`<li>${esc(z)}</li>`).join("")}</ol>
     </details>
-    <button class="btn ghost small" style="margin-top:10px" data-cook="${esc(i.titel)}">Das koche ich</button></div>`;
+    <div class="rbar"><button class="btn ghost small" data-cook="${esc(i.titel)}">Das koche ich</button>${saveBtn(i.titel, "ideaSave", ideaKey(i))}</div></div>`;
 }
+const ideaStore={}; const ideaKey=i=>{ const k=Math.random().toString(36).slice(2,9); ideaStore[k]=i; return k; };
 function renderIdeas(r, chosen, more){
   const ideas=(r?.ideen||[]).filter(i=>i?.titel);
+  const chosenNames=chosen.map(s=>s.name).filter(n=>state.spices.some(x=>x.name===n));
   { const prev=getLast().ideas; const keep = more && prev ? prev : {anwendung:r?.anwendung||"", ideen:[], ids:chosen.map(s=>s.id), wish:$("#ideaWish").value};
     keep.ideen=[...keep.ideen, ...ideas]; setLast("ideas", keep); }
   lastIdeas.push(...ideas.map(i=>i.titel));
@@ -581,12 +614,15 @@ function renderIdeas(r, chosen, more){
 $("#ideaGo").onclick = ()=>{ lastIdeas=[]; getIdeas(false); };
 $("#ideaOut").onclick = e=>{
   if(e.target.id==="moreIdeas"){ getIdeas(true); return; }
+  const sv=e.target.closest("[data-ideasave]"); if(sv){ const i=ideaStore[sv.dataset.ideasave]; if(!i) return;
+    const g=[...(getLast().ideas?.ids||[]).map(id=>state.spices.find(s=>s.id===id)?.name), ...(i.weitereGewuerze||[]).map(n=>findSpice(n)?.name)].filter(Boolean);
+    storeRecipe({ titel:i.titel, beschreibung:i.beschreibung, zeit:i.zeit, art:i.art, zutaten:i.zutaten, schritte:i.schritte, gewuerze:g, quelle:"Rezeptidee" }, sv); return; }
   const c=e.target.closest("[data-cook]"); if(!c) return;
   $("#dish").value=c.dataset.cook; show("cook"); toast("Tipp: Jetzt passende Gewürze finden lassen");
 };
 
 /* ---------- Rezeptheft ---------- */
-function heftCount(){ const n=(state.rezepte||[]).length; $("#heftCount").textContent = n ? `${n} ${n===1?"Rezept":"Rezepte"} aus deinem Heft gespeichert.` : ""; }
+function heftCount(){ renderRecipes(); const n=(state.rezepte||[]).filter(r=>!r.quelle||r.quelle==="Rezeptheft").length; $("#heftCount").textContent = n ? `${n} ${n===1?"Rezept":"Rezepte"} aus deinem Heft gespeichert.` : ""; }
 function shrinkBig(file){
   return new Promise((ok,bad)=>{ const img=new Image(); img.onload=()=>{ const m=2200, k=Math.min(1,m/Math.max(img.width,img.height)); const c=document.createElement("canvas"); c.width=img.width*k; c.height=img.height*k; c.getContext("2d").drawImage(img,0,0,c.width,c.height); c.toBlob(b=>b?ok(b):bad(),"image/jpeg",.9); URL.revokeObjectURL(img.src); }; img.onerror=bad; img.src=URL.createObjectURL(file); });
 }
@@ -631,12 +667,97 @@ document.addEventListener("click", e=>{
   state.rezepte=(state.rezepte||[]).filter(r=>r.id!==id); save(); heftCount(); renderPick(); renderPantry(); toast("Rezept gelöscht");
 });
 
+/* ---------- Rezeptsammlung ---------- */
+const isSaved=t=>(state.rezepte||[]).some(r=>norm(r.titel)===norm(t));
+function saveBtn(titel, kind, key=""){
+  const on=isSaved(titel);
+  return `<button class="btn ghost small${on?" saved":""}" style="${kind==="cookSave"?"margin-top:10px":""}" data-${kind.toLowerCase()}="${esc(key||"1")}"${on?" disabled":""}>${on?"✓ Gespeichert":"📌 Rezept speichern"}</button>`;
+}
+function storeRecipe(r, btn){
+  const titel=String(r.titel||"").trim().slice(0,120); if(!titel){ toast("Das Rezept braucht einen Titel"); return false; }
+  state.rezepte=state.rezepte||[];
+  if(isSaved(titel) && !r.force){ toast("Ist schon gespeichert"); return false; }
+  const arr=(a,n)=>(Array.isArray(a)?a:[]).map(x=>String(x).trim()).filter(Boolean).slice(0,n);
+  state.rezepte.push({ id:Math.random().toString(36).slice(2,9), titel, gewuerz:"", gewuerze:[...new Set(arr(r.gewuerze,6))], beschreibung:String(r.beschreibung||"").slice(0,400),
+    portionen:String(r.portionen||""), zeit:String(r.zeit||""), art:String(r.art||""), zutaten:arr(r.zutaten,40), schritte:arr(r.schritte,30),
+    text:String(r.text||"").slice(0,8000), link:/^https?:\/\//.test(r.link||"")?String(r.link).slice(0,500):"", quelle:r.quelle||"Eigenes Rezept", added:Date.now() });
+  save(); renderRecipes(); toast("Gespeichert – zu finden unter „Rezepte“");
+  if(btn){ btn.classList.add("saved"); btn.disabled=true; btn.textContent="✓ Gespeichert"; }
+  return true;
+}
+let rzSrcSel="";
+const SRC_LABEL={"Rezeptheft":"📒 Rezeptheft","KI-Vorschlag":"🍳 KI-Vorschlag","Rezeptidee":"💡 Rezeptidee","Eigenes Rezept":"✍️ Eigenes Rezept"};
+const srcName=r=>r.quelle||"Rezeptheft";
+function recipeSpices(r){ return [...new Set([...(r.gewuerze||[]), r.gewuerz].filter(Boolean))]; }
+function recipeCard(r){
+  const meta=[r.tuerchen&&`🚪 Türchen ${esc(r.tuerchen)}`, r.zeit&&`⏱ ${esc(r.zeit)}`, r.portionen&&`🍽 ${esc(r.portionen)}`, r.art&&esc(r.art), ...recipeSpices(r).map(n=>`🫙 ${esc(n)}`)].filter(Boolean).map(m=>`<span>${m}</span>`).join("");
+  return `<div class="idea"><span class="rsrc">${esc(SRC_LABEL[srcName(r)]||srcName(r))}</span>
+    <h3>${esc(r.titel)}</h3>${r.beschreibung?`<div class="why">${esc(r.beschreibung)}</div>`:""}
+    ${meta?`<div class="meta" style="margin-top:6px">${meta}</div>`:""}
+    <details><summary>Zutaten &amp; Zubereitung</summary>
+      ${(r.zutaten||[]).length?`<ul>${r.zutaten.map(z=>`<li>${esc(z)}</li>`).join("")}</ul>`:""}
+      ${(r.schritte||[]).length?`<ol>${r.schritte.map(z=>`<li>${esc(z)}</li>`).join("")}</ol>`:""}
+      ${r.text?`<p class="rraw">${esc(r.text)}</p>`:""}
+      ${r.link?`<p class="links"><a href="${esc(r.link)}" target="_blank" rel="noopener">Zum Original ↗</a></p>`:""}
+    </details>
+    <div class="rbar"><button class="btn ghost small" data-rzcook="${r.id}">Das koche ich</button><button class="rzdel" data-rzdel="${r.id}" style="margin-left:auto">Rezept löschen</button></div></div>`;
+}
+function renderRecipes(){
+  const all=state.rezepte||[]; const n=all.length;
+  const b=$("#navRz"); b.textContent=n; b.classList.toggle("hidden", !n);
+  $("#rzCount").textContent = n ? `Meine Rezepte · ${n}` : "Meine Rezepte";
+  const srcs=[...new Set(all.map(srcName))];
+  if(rzSrcSel && !srcs.includes(rzSrcSel)) rzSrcSel="";
+  $("#rzSrc").innerHTML = srcs.length>1 ? [["","Alle"],...srcs.map(x=>[x,SRC_LABEL[x]||x])].map(([v,t])=>`<button class="chip${rzSrcSel===v?" sel":""}" data-rzsrc="${esc(v)}">${esc(t)}</button>`).join("") : "";
+  const f=norm($("#rzFilter").value);
+  const list=all.filter(r=>(!rzSrcSel||srcName(r)===rzSrcSel) && (!f || norm([r.titel,r.beschreibung,r.text,...(r.zutaten||[]),...recipeSpices(r)].join(" ")).includes(f)))
+    .sort((a,b)=>(b.added||0)-(a.added||0));
+  if(!n){ $("#rzList").innerHTML=`<div class="card empty"><div class="big">📖</div><p class="muted">Noch keine Rezepte gespeichert. Tippe bei einem Rezeptvorschlag oder einer Rezeptidee auf „📌 Rezept speichern“ – oder füge unten ein eigenes Rezept ein.</p></div>`; return; }
+  $("#rzList").innerHTML = list.length ? list.map(recipeCard).join("") : `<div class="card"><p class="muted" style="margin:0">Nichts gefunden.</p></div>`;
+}
+$("#rzFilter").oninput=renderRecipes;
+$("#rzSrc").onclick=e=>{ const c=e.target.closest("[data-rzsrc]"); if(!c) return; rzSrcSel=c.dataset.rzsrc; renderRecipes(); };
+$("#rzList").onclick=e=>{ const c=e.target.closest("[data-rzcook]"); if(!c) return; const r=(state.rezepte||[]).find(x=>x.id===c.dataset.rzcook); if(!r) return;
+  $("#dish").value=r.titel; show("cook"); toast("Tipp: Jetzt passende Gewürze finden lassen"); };
+function rzDone(){ $("#rzText").value=""; $("#rzLink").value=""; $("#rzAiOut").innerHTML=""; $("#rzAdd").open=false; window.scrollTo(0,0); }
+$("#rzPlain").onclick=()=>{
+  const t=$("#rzText").value.trim(); if(!t){ $("#rzText").focus(); return; }
+  const lines=t.split(/\n/); const titel=lines[0].replace(/^[#*\s]+/,"").trim().slice(0,120)||"Rezept";
+  if(storeRecipe({ titel, text: lines.slice(1).join("\n").trim(), link:$("#rzLink").value.trim(), quelle:"Eigenes Rezept", force:true })) rzDone();
+};
+let rzBusy=false;
+$("#rzAi").onclick=async ()=>{
+  const t=$("#rzText").value.trim(); if(!t){ $("#rzText").focus(); return; }
+  if(!sample||rzBusy) return; rzBusy=true;
+  const btn=$("#rzAi"); btn.disabled=true; btn.innerHTML=`<span class="spinner"></span> Lese das Rezept …`; $("#rzAiOut").innerHTML="";
+  const vorrat=state.spices.map(s=>s.name).join(", ");
+  try{
+    const r=await sample.json(`Hier ist ein Rezepttext, z. B. aus einem Instagram-Beitrag oder von einer Website. Mach daraus ein sauberes Rezept auf Deutsch. Übernimm Mengen und Schritte so, wie sie im Text stehen – nichts erfinden. Hashtags, Emojis, Werbung und „Link in Bio“ weglassen. Steht kein Titel da, gib einen kurzen passenden.
+"gewuerze": höchstens 3 Namen exakt aus diesem Vorrat, die im Rezept vorkommen oder sehr gut dazu passen, sonst leer. Vorrat: ${vorrat||"(leer)"}
+
+Text:
+"""${t.slice(0,8000)}"""
+
+Antworte ausschließlich mit JSON:
+{"titel":"","beschreibung":"ein kurzer Satz","zeit":"","portionen":"","zutaten":["Menge + Zutat"],"schritte":["Schritt"],"gewuerze":[""]}
+Wenn kein Rezept erkennbar ist: {"titel":"","zutaten":[],"schritte":[]}`, { modelTier:"default" });
+    if(!r?.titel || !((r.zutaten||[]).length || (r.schritte||[]).length)){ $("#rzAiOut").innerHTML=`<p class="muted" style="margin:10px 0 0">Darin konnte ich kein Rezept erkennen. Du kannst es trotzdem „Ohne KI so speichern“.</p>`; }
+    else {
+      r.gewuerze=(r.gewuerze||[]).map(n=>findSpice(n)?.name).filter(Boolean);
+      if(storeRecipe({ ...r, link:$("#rzLink").value.trim(), quelle:"Eigenes Rezept", force:true })) rzDone();
+    }
+  }catch(err){ $("#rzAiOut").innerHTML=`<p class="muted" style="margin:10px 0 0">${esc(err?.message||"Da ist etwas schiefgelaufen. Bitte nochmal versuchen.")}</p>`; }
+  rzBusy=false; btn.disabled=false; btn.textContent="Mit KI übernehmen";
+};
+
 /* ---------- Navigation ---------- */
 function show(v){
   $("#v-cook").classList.toggle("hidden", v!=="cook");
   $("#v-pantry").classList.toggle("hidden", v!=="pantry");
   $("#v-ideas").classList.toggle("hidden", v!=="ideas");
   $("#v-settings").classList.toggle("hidden", v!=="settings");
+  $("#v-recipes").classList.toggle("hidden", v!=="recipes");
+  if(v==="recipes") renderRecipes();
   if(v==="settings") renderSettings();
   if(v==="ideas") renderPick();
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.v===v));
@@ -654,7 +775,7 @@ loadLocal(); renderPantry(); renderQuick(); heftCount();
       chosen.forEach(s=>picked.add(s.id)); $("#ideaWish").value=l.ideas.wish||"";
       const saved=l.ideas; renderIdeas({anwendung:saved.anwendung, ideen:saved.ideen}, chosen.length?chosen:[{name:"deinen Gewürzen"}], false); setLast("ideas", saved); } }catch(e){}
   if(!state.spices.length) show("pantry");
-  else if(["cook","pantry","ideas","settings"].includes(l.view)) show(l.view);
+  else if(["cook","pantry","ideas","recipes","settings"].includes(l.view)) show(l.view);
 })();
 
 /* ---------- KI (Anthropic API) ---------- */
@@ -744,6 +865,7 @@ function refreshAI(){
   sample = has ? sampleImpl : null;
   $("#noai").classList.toggle("hidden", has); $("#go").disabled=!has;
   $("#photoBox").classList.toggle("hidden", !has); $("#heftBox").classList.toggle("hidden", !has);
+  $("#rzAi").classList.toggle("hidden", !has); $("#rzPlain").classList.toggle("ghost", has);
   renderPick();
 }
 /* Live-Suche beim Hersteller */
