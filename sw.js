@@ -1,5 +1,5 @@
 // Gewürz-Kompass – Service Worker: macht die App installierbar und offline startbar.
-const CACHE = "gewuerz-kompass-v8";
+const CACHE = "gewuerz-kompass-v9";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -15,6 +15,23 @@ self.addEventListener("activate", e => {
 
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
+  // Teilen aus anderen Apps (z. B. Instagram): Daten zwischenspeichern, dann App öffnen
+  if (e.request.method === "POST" && url.origin === location.origin && url.searchParams.has("share-target")) {
+    e.respondWith((async () => {
+      try {
+        const f = await e.request.formData();
+        const c = await caches.open("gk-share");
+        for (const k of await c.keys()) await c.delete(k);
+        const imgs = f.getAll("bilder").filter(x => x && x.size && /^image\//.test(x.type)).slice(0, 6);
+        for (let i = 0; i < imgs.length; i++) await c.put("img" + i, new Response(imgs[i], { headers: { "content-type": imgs[i].type } }));
+        await c.put("share.json", new Response(JSON.stringify({
+          title: f.get("share-title") || "", text: f.get("share-text") || "", url: f.get("share-url") || "", files: imgs.length
+        }), { headers: { "content-type": "application/json" } }));
+      } catch (_) {}
+      return Response.redirect(new URL("./?shared=1", self.registration.scope).href, 303);
+    })());
+    return;
+  }
   // KI-Anfragen und fremde Seiten nie cachen
   if (e.request.method !== "GET" || url.origin !== location.origin) return;
   // Seite: erst Netz (für Updates), dann Cache (offline)

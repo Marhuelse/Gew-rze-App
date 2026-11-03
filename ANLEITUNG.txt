@@ -34,3 +34,11 @@ GEWÜRZ-KOMPASS – so bringst du die App aufs Handy
 Wichtig: Der Schlüssel bleibt nur auf deinem Handy. Gib die App-Adresse ruhig weiter –
 jeder muss dort seinen eigenen Schlüssel eintragen. Deine Daten liegen nur auf dem Gerät,
 also ab und zu unter Einstellungen > "Sicherung speichern".
+
+6) Rezepte aus Instagram speichern
+   - Im Beitrag auf "Teilen" (Papierflieger) > "Teilen über …" > "Gewürz-Kompass" tippen
+     (erscheint erst, nachdem die App installiert und einmal geöffnet wurde)
+   - Klappt das Lesen des Links nicht (Instagram sperrt oft ohne Anmeldung):
+     1–3 Screenshots von der Beschreibung machen und die Screenshots an Gewürz-Kompass teilen
+   - Unter "Rezepte" bei jedem Rezept "Analysieren" tippen: passende Gewürze aus dem Vorrat,
+     grobe Nährwerte, Schwierigkeit, Tipps, Varianten und Einkaufsliste
