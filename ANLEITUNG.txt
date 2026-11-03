@@ -44,3 +44,10 @@ also ab und zu unter Einstellungen > "Sicherung speichern".
      "Rezepte" > "Eigenes Rezept einfügen" > "Bilder oder PDF hinzufügen"
    - Unter "Rezepte" bei jedem Rezept "Analysieren" tippen: passende Gewürze aus dem Vorrat,
      grobe Nährwerte, Schwierigkeit, Tipps, Varianten und Einkaufsliste
+
+7) Sizzlebrothers-Rezepte
+   - Unter "Rezepte" sind alle Rezepte der Sizzlebrothers schon eingetragen (Filter "🔥 Sizzlebrothers").
+   - Beim ersten Aufklappen von "Zutaten & Zubereitung" holt die App das Rezept von sizzlebrothers.de
+     (kostet mit Claude Haiku nur Bruchteile eines Cents) und speichert es auf dem Handy – danach geht es offline.
+   - Hast du Sizzlebrothers-Gewürze im Vorrat (Hersteller "SizzleBrothers"), zeigt "Rezeptideen" > "Vom Hersteller"
+     die passenden Rezepte – Antippen öffnet sie direkt in der App.
