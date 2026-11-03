@@ -277,6 +277,9 @@ function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("sho
 /* ---------- Speicher ---------- */
 function loadLocal(){ try{ const j=JSON.parse(localStorage.getItem("gk_state")||"null"); if(j&&Array.isArray(j.spices)) state=Object.assign({spices:[],recent:[],rezepte:[],live:{},usage:{in:0,out:0,searches:0}},j);}catch(e){} }
 function saveLocal(){ try{ localStorage.setItem("gk_state", JSON.stringify(state)); }catch(e){} }
+/* letzte Ergebnisse überleben das Schließen der App */
+function getLast(){ try{ return JSON.parse(localStorage.getItem("gk_last")||"{}")||{}; }catch(e){ return {}; } }
+function setLast(k,v){ try{ const l=getLast(); l[k]=v; localStorage.setItem("gk_last", JSON.stringify(l)); }catch(e){} }
 function save(){
   saveLocal();
   return;
@@ -326,7 +329,7 @@ function renderPantry(){
     if(grp!==g){ html+=`<div class="group">${esc(grp)}</div>`; g=grp; }
     const info = s.used ? `${s.used}× verwendet${s.last?` · zuletzt ${fmtDate(s.last)}`:""}` : "noch nie verwendet";
     html+=`<div class="item"><div class="dot" style="background:${colorFor(s.name)};flex-basis:32px;height:32px;font-size:14px">${esc(s.name[0].toUpperCase())}</div>
-      <div style="flex:1;min-width:0;cursor:pointer" data-edit="${s.id}"><div class="n">${esc(s.name)}</div><div class="s">${s.src?`${esc(s.src)} · `:""}${ownRecipes(s).length?`📒 ${ownRecipes(s).length} · `:""}${info} · <span style="text-decoration:underline">Hersteller ${s.hersteller?"ändern":"eintragen"}</span></div></div>
+      <div style="flex:1;min-width:0;cursor:pointer" data-edit="${s.id}"><div class="n">${esc(s.name)}</div><div class="s">${s.src?`${esc(s.src)} · `:""}${ownRecipes(s).length?`📒 ${ownRecipes(s).length} · `:""}${info} · <span style="text-decoration:underline">bearbeiten</span></div></div>
       <button class="x" aria-label="${esc(s.name)} entfernen" data-del="${s.id}">×</button></div>`;
   }
   $("#list").innerHTML = html || `<p class="muted">Nichts gefunden.</p>`;
@@ -342,9 +345,14 @@ $("#filter").oninput = renderPantry;
 $("#list").onclick = e=>{
   const ed=e.target.closest("[data-edit]");
   if(ed && !e.target.closest("form")){ const s=state.spices.find(x=>x.id===ed.dataset.edit); if(!s) return;
-    ed.innerHTML=`<div class="n">${esc(s.name)}</div><form class="row" style="margin-top:6px"><input type="text" list="herstList" value="${esc(s.hersteller||"")}" placeholder="Hersteller" style="padding:8px"><button class="btn small">OK</button></form>`;
-    const f=ed.querySelector("form"), i=f.querySelector("input"); i.focus();
-    f.onsubmit=ev=>{ ev.preventDefault(); s.hersteller=i.value.trim().slice(0,40); save(); renderPantry(); };
+    ed.innerHTML=`<form style="margin-top:2px"><input type="text" name="n" value="${esc(s.name)}" placeholder="Name" maxlength="60" style="padding:8px;width:100%;box-sizing:border-box;font-weight:600"><div class="row" style="margin-top:6px"><input type="text" name="h" list="herstList" value="${esc(s.hersteller||"")}" placeholder="Hersteller" style="padding:8px"><button class="btn small">OK</button></div></form>`;
+    const f=ed.querySelector("form"), iN=f.querySelector('[name="n"]'), iH=f.querySelector('[name="h"]'); iN.focus(); iN.select();
+    f.onsubmit=ev=>{ ev.preventDefault();
+      const nn=iN.value.trim().slice(0,60); if(!nn){ toast("Name darf nicht leer sein"); iN.focus(); return; }
+      if(norm(nn)!==norm(s.name) && state.spices.some(x=>x.id!==s.id && norm(x.name)===norm(nn))){ toast("Dieses Gewürz gibt es schon im Vorrat"); iN.focus(); return; }
+      const alt=norm(s.name);
+      if(nn!==s.name){ for(const r of (state.rezepte||[])) if(norm(r.gewuerz)===alt) r.gewuerz=nn; s.name=nn; }
+      s.hersteller=iH.value.trim().slice(0,40); save(); renderPantry(); toast("Gespeichert"); };
     return; }
   const id=e.target.dataset?.del; if(!id) return; const s=state.spices.find(x=>x.id===id); if(e.target.dataset.confirm){ removeSpice(id); } else { e.target.dataset.confirm="1"; e.target.textContent="löschen?"; e.target.style.fontSize="13px"; setTimeout(()=>{ if(e.target.isConnected){ delete e.target.dataset.confirm; e.target.textContent="×"; e.target.style.fontSize=""; } },3000);} };
 
@@ -369,8 +377,8 @@ async function onPhoto(e){
     const mainH = String(res?.hersteller||"").trim();
     if(!names.length){ out.innerHTML=`<p class="muted">Keine Gewürze erkannt. Versuch ein schärferes Foto.</p>`; return; }
     out.innerHTML = `<label class="l" style="margin-top:14px" for="photoH">Hersteller</label><input type="text" id="photoH" value="${esc(mainH)}" placeholder="nicht erkannt – hier eintragen" autocomplete="off">
-      <p class="muted" style="margin:10px 0 0">Gefunden – abwählen, was nicht passt:</p><div class="preview">${names.map((n,i)=>`<label><input type="checkbox" checked data-i="${i}">${esc(n.name)}${n.hersteller&&n.hersteller.trim()!==mainH?` <span class="muted" style="font-size:12px">· ${esc(n.hersteller)}</span>`:""}</label>`).join("")}</div><button class="btn" id="photoAdd">Übernehmen</button>`;
-    $("#photoAdd").onclick = ()=>{ const hInput=$("#photoH").value.trim(); const pick=[...out.querySelectorAll(".preview input:checked")].map(c=>{const n=names[c.dataset.i]; const own=(n.hersteller||"").trim(); return {name:n.name, hersteller: own && own!==mainH ? own : hInput};}); const a=addSpices(pick,$("#addSrc").value); out.innerHTML=""; toast(`${a} Gewürze hinzugefügt`); };
+      <p class="muted" style="margin:10px 0 0">Gefunden – falsch erkannte Namen antippen und korrigieren, abwählen, was nicht passt:</p><div class="preview">${names.map((n,i)=>`<label><input type="checkbox" checked data-i="${i}"><input type="text" class="pn" data-i="${i}" value="${esc(n.name)}" maxlength="60" size="${Math.max(4,n.name.length)}" style="border:0;background:transparent;font:inherit;padding:0;min-width:3em;max-width:60vw">${n.hersteller&&n.hersteller.trim()!==mainH?` <span class="muted" style="font-size:12px">· ${esc(n.hersteller)}</span>`:""}</label>`).join("")}</div><button class="btn" id="photoAdd">Übernehmen</button>`;
+    $("#photoAdd").onclick = ()=>{ const hInput=$("#photoH").value.trim(); const pick=[...out.querySelectorAll(".preview input:checked")].map(c=>{const n=names[c.dataset.i]; const own=(n.hersteller||"").trim(); const nm=(out.querySelector(`.pn[data-i="${c.dataset.i}"]`)?.value||n.name).trim(); return {name:nm, hersteller: own && own!==mainH ? own : hInput};}); const a=addSpices(pick,$("#addSrc").value); out.innerHTML=""; toast(`${a} Gewürze hinzugefügt`); };
   }catch(err){ out.innerHTML=`<p class="muted">${err?.code==="rate_limited"?"Gerade zu viele Anfragen – bitte kurz warten.":"Das Foto konnte nicht gelesen werden."}</p>`; }
   e.target.value="";
 }
@@ -451,6 +459,7 @@ function renderResult(r, dish){
       </details></div>`;
   }
   $("#result").innerHTML = h;
+  setLast("cook", {r, dish});
 }
 $("#result").onclick = e=>{
   const b=e.target.closest("[data-use]"); if(!b) return;
@@ -555,6 +564,8 @@ function ideaCard(i){
 }
 function renderIdeas(r, chosen, more){
   const ideas=(r?.ideen||[]).filter(i=>i?.titel);
+  { const prev=getLast().ideas; const keep = more && prev ? prev : {anwendung:r?.anwendung||"", ideen:[], ids:chosen.map(s=>s.id), wish:$("#ideaWish").value};
+    keep.ideen=[...keep.ideen, ...ideas]; setLast("ideas", keep); }
   lastIdeas.push(...ideas.map(i=>i.titel));
   let h="";
   if(!more){
@@ -629,13 +640,22 @@ function show(v){
   if(v==="settings") renderSettings();
   if(v==="ideas") renderPick();
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.v===v));
+  setLast("view", v);
   window.scrollTo(0,0);
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>show(b.dataset.v));
 
 /* ---------- Start ---------- */
 loadLocal(); renderPantry(); renderQuick(); heftCount();
-if(!state.spices.length) show("pantry");
+(function restoreLast(){
+  const l=getLast();
+  try{ if(l.cook?.dish){ $("#dish").value=l.cook.dish; renderResult(l.cook.r, l.cook.dish); } }catch(e){}
+  try{ if(l.ideas?.ideen?.length){ const chosen=state.spices.filter(s=>(l.ideas.ids||[]).includes(s.id));
+      chosen.forEach(s=>picked.add(s.id)); $("#ideaWish").value=l.ideas.wish||"";
+      const saved=l.ideas; renderIdeas({anwendung:saved.anwendung, ideen:saved.ideen}, chosen.length?chosen:[{name:"deinen Gewürzen"}], false); setLast("ideas", saved); } }catch(e){}
+  if(!state.spices.length) show("pantry");
+  else if(["cook","pantry","ideas","settings"].includes(l.view)) show(l.view);
+})();
 
 /* ---------- KI (Anthropic API) ---------- */
 const LS_KEY="gk_api_key", LS_MODEL="gk_model";

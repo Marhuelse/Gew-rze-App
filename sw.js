@@ -1,5 +1,5 @@
 // Gewürz-Kompass – Service Worker: macht die App installierbar und offline startbar.
-const CACHE = "gewuerz-kompass-v6";
+const CACHE = "gewuerz-kompass-v7";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
