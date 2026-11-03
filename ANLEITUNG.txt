@@ -40,5 +40,7 @@ also ab und zu unter Einstellungen > "Sicherung speichern".
      (erscheint erst, nachdem die App installiert und einmal geöffnet wurde)
    - Klappt das Lesen des Links nicht (Instagram sperrt oft ohne Anmeldung):
      1–3 Screenshots von der Beschreibung machen und die Screenshots an Gewürz-Kompass teilen
+   - Fotos, Screenshots und PDFs (auch ganze Kochbücher) gehen genauso: teilen oder unter
+     "Rezepte" > "Eigenes Rezept einfügen" > "Bilder oder PDF hinzufügen"
    - Unter "Rezepte" bei jedem Rezept "Analysieren" tippen: passende Gewürze aus dem Vorrat,
      grobe Nährwerte, Schwierigkeit, Tipps, Varianten und Einkaufsliste

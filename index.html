@@ -114,7 +114,7 @@
   .ana h4{font:600 12px Inter;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:10px 0 4px}
   .ana ul{margin:4px 0;padding-left:20px}
   .nw{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.nw div{background:var(--soft);border-radius:10px;padding:6px;text-align:center}.nw b{display:block;font-size:15px}.nw small{color:var(--muted);font-size:11px}
-  .thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.thumbs img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+  .thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.thumbs .pdf{width:64px;height:64px;border-radius:10px;border:1px solid var(--line);background:var(--soft);display:grid;place-items:center;font-size:11px;text-align:center;padding:4px;overflow:hidden;word-break:break-all}.thumbs img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
   .rraw{white-space:pre-wrap;font-size:14px;margin:6px 0 0}
   .chip.sel{background:var(--paprika);border-color:var(--paprika);color:#fff}
   .preview label{display:flex;align-items:center;gap:6px;background:var(--soft);border-radius:10px;padding:6px 10px;font-size:14px}
@@ -174,10 +174,10 @@
     <div class="card">
       <details id="rzAdd">
         <summary>✍️ Eigenes Rezept einfügen</summary>
-        <p class="muted" style="margin:8px 0">Am einfachsten: In Instagram beim Beitrag auf <b>Teilen</b> tippen und <b>Gewürz-Kompass</b> wählen – das geht auch mit Screenshots. Oder hier Text, Link oder Screenshots einfügen.</p>
+        <p class="muted" style="margin:8px 0">Am einfachsten: In Instagram beim Beitrag auf <b>Teilen</b> tippen und <b>Gewürz-Kompass</b> wählen – das geht auch mit Screenshots, Fotos und PDFs. Oder hier Text, Link, Bilder oder ein PDF einfügen – auch mehrere Rezepte auf einmal.</p>
         <textarea id="rzText" placeholder="Rezepttext hier einfügen …" style="min-height:110px"></textarea>
         <input type="text" id="rzLink" placeholder="Link zum Beitrag / Original (optional)" style="margin-top:8px" autocomplete="off" inputmode="url">
-        <div class="btn ghost filebtn" id="rzPicBtn" style="margin-top:8px">🖼️ Screenshots hinzufügen<input type="file" id="rzPics" accept="image/*" multiple></div>
+        <div class="btn ghost filebtn" id="rzPicBtn" style="margin-top:8px">🖼️ Bilder oder PDF hinzufügen<input type="file" id="rzPics" accept="image/*,application/pdf,.pdf" multiple></div>
         <div class="thumbs" id="rzThumbs"></div>
         <button class="btn" id="rzAi">Mit KI übernehmen</button>
         <button class="btn ghost" id="rzPlain">Ohne KI so speichern</button>
@@ -693,7 +693,7 @@ function storeRecipe(r, btn){
   return true;
 }
 let rzSrcSel="";
-const SRC_LABEL={"Instagram":"📸 Instagram","Rezeptheft":"📒 Rezeptheft","KI-Vorschlag":"🍳 KI-Vorschlag","Rezeptidee":"💡 Rezeptidee","Eigenes Rezept":"✍️ Eigenes Rezept"};
+const SRC_LABEL={"PDF":"📄 PDF","Bild":"🖼️ Bild","Instagram":"📸 Instagram","Rezeptheft":"📒 Rezeptheft","KI-Vorschlag":"🍳 KI-Vorschlag","Rezeptidee":"💡 Rezeptidee","Eigenes Rezept":"✍️ Eigenes Rezept"};
 const srcName=r=>r.quelle||"Rezeptheft";
 function recipeSpices(r){ return [...new Set([...(r.gewuerze||[]), r.gewuerz].filter(Boolean))]; }
 function recipeCard(r){
@@ -730,36 +730,51 @@ $("#rzList").onclick=e=>{
     if(u.classList.toggle("on")){ s.used=(s.used||0)+1; s.prevLast=s.last; s.last=Date.now(); u.textContent="✓ Genommen"; } else { s.used=Math.max(0,(s.used||0)-1); s.last=s.prevLast||0; u.textContent="Genommen"; } save(); renderPantry(); return; }
   const c=e.target.closest("[data-rzcook]"); if(!c) return; const r=(state.rezepte||[]).find(x=>x.id===c.dataset.rzcook); if(!r) return;
   $("#dish").value=r.titel; show("cook"); toast("Tipp: Jetzt passende Gewürze finden lassen"); };
-let rzImgs=[];
-function rzThumbs(){ $("#rzThumbs").innerHTML=rzImgs.map((b,i)=>`<img src="${URL.createObjectURL(b)}" alt="Screenshot ${i+1}">`).join("") + (rzImgs.length?`<button class="rzdel" id="rzPicClr">Bilder entfernen</button>`:""); }
-$("#rzPics").onchange=async e=>{ const f=[...e.target.files].slice(0,6-rzImgs.length); e.target.value=""; try{ rzImgs.push(...await Promise.all(f.map(shrinkBig))); }catch(_){ toast("Bild konnte nicht geladen werden"); } rzThumbs(); };
-$("#rzThumbs").onclick=e=>{ if(e.target.id==="rzPicClr"){ rzImgs=[]; rzThumbs(); } };
-function rzDone(){ $("#rzText").value=""; $("#rzLink").value=""; $("#rzAiOut").innerHTML=""; rzImgs=[]; rzThumbs(); $("#rzAdd").open=false; window.scrollTo(0,0); }
+let rzImgs=[], rzPdfs=[];
+const isPdf=f=>f && (f.type==="application/pdf" || /\.pdf$/i.test(f.name||""));
+function rzThumbs(){
+  $("#rzThumbs").innerHTML=rzImgs.map((b,i)=>`<img src="${URL.createObjectURL(b)}" alt="Bild ${i+1}">`).join("")
+    + rzPdfs.map(f=>`<div class="pdf">📄<br>${esc((f.name||"PDF").slice(0,24))}</div>`).join("")
+    + (rzImgs.length||rzPdfs.length?`<button class="rzdel" id="rzPicClr">Dateien entfernen</button>`:""); }
+async function addRzFiles(files){
+  for(const f of files){
+    if(isPdf(f)){ if(f.size>25e6){ toast("PDF ist zu groß (max. 25 MB)"); continue; } if(rzPdfs.length>=3){ toast("Höchstens 3 PDFs auf einmal"); continue; } rzPdfs.push(f); }
+    else if(/^image\//.test(f.type||"")){ if(rzImgs.length>=8){ toast("Höchstens 8 Bilder auf einmal"); continue; } try{ rzImgs.push(await shrinkBig(f)); }catch(_){ toast("Bild konnte nicht geladen werden"); } }
+  }
+  rzThumbs();
+}
+$("#rzPics").onchange=async e=>{ const f=[...e.target.files]; e.target.value=""; await addRzFiles(f); };
+$("#rzThumbs").onclick=e=>{ if(e.target.id==="rzPicClr"){ rzImgs=[]; rzPdfs=[]; rzThumbs(); } };
+function rzDone(){ $("#rzText").value=""; $("#rzLink").value=""; $("#rzAiOut").innerHTML=""; rzImgs=[]; rzPdfs=[]; rzThumbs(); $("#rzAdd").open=false; window.scrollTo(0,0); }
 const firstUrl=t=>(String(t||"").match(/https?:\/\/[^\s"'<>]+/)||[""])[0];
 $("#rzPlain").onclick=()=>{
   let t=$("#rzText").value.trim(); const link=$("#rzLink").value.trim()||firstUrl(t);
   if(link) t=t.replace(link,"").trim();
-  if(!t && !link){ $("#rzText").focus(); return; }
+  if(!t && !link){ toast(rzImgs.length||rzPdfs.length?"Bilder und PDFs gehen nur mit KI":"Erst etwas einfügen"); $("#rzText").focus(); return; }
   const lines=t.split(/\n/); const titel=(lines[0]||"").replace(/^[#*\s]+/,"").trim().slice(0,120)||(/instagram\./.test(link)?"Instagram-Rezept":"Rezept");
   if(storeRecipe({ titel, text: lines.slice(1).join("\n").trim(), link, quelle:/instagram\./.test(link)?"Instagram":"Eigenes Rezept", force:true })) rzDone();
 };
+const okRecipe=r=>r && r.titel && ((r.zutaten||[]).length || (r.schritte||[]).length);
 let rzBusy=false;
 async function importRecipe(){
   let t=$("#rzText").value.trim(); const link=$("#rzLink").value.trim()||firstUrl(t);
-  if(!t && !link && !rzImgs.length){ $("#rzText").focus(); return; }
+  const hasFiles=rzImgs.length||rzPdfs.length;
+  if(!t && !link && !hasFiles){ $("#rzText").focus(); return; }
   if(!sample||rzBusy) return; rzBusy=true;
-  const btn=$("#rzAi"); btn.disabled=true; btn.innerHTML=`<span class="spinner"></span> ${rzImgs.length?"Lese die Screenshots …":link&&t.replace(link,"").trim().length<40?"Öffne den Beitrag …":"Lese das Rezept …"}`; $("#rzAiOut").innerHTML="";
-  const vorrat=state.spices.map(s=>s.name).join(", ");
   const textOnly=t.replace(link,"").trim();
-  const useFetch = !!link && !rzImgs.length && textOnly.length<40;
-  const prompt=`Hier ist ein Rezept, z. B. aus einem Instagram-Beitrag, von einer Website oder als Screenshot(s). Mach daraus ein sauberes Rezept auf Deutsch (übersetze, falls nötig). Übernimm Mengen und Schritte so, wie sie dort stehen – nichts erfinden. Hashtags, Emojis, Werbung und „Link in Bio“ weglassen. Steht kein Titel da, gib einen kurzen passenden.
-${useFetch?`Öffne dazu den Link mit dem Werkzeug web_fetch und lies die Beschreibung des Beitrags: ${link}\nWenn die Seite nicht lesbar ist oder dort kein Rezept steht, erfinde nichts, sondern gib einen leeren Titel zurück.`:""}
-"gewuerze": höchstens 3 Namen exakt aus diesem Vorrat, die im Rezept vorkommen oder sehr gut dazu passen, sonst leer. Vorrat: ${vorrat||"(leer)"}
+  const useFetch = !!link && !hasFiles && textOnly.length<40;
+  const btn=$("#rzAi"); btn.disabled=true; btn.innerHTML=`<span class="spinner"></span> ${rzPdfs.length?"Lese das PDF – kann etwas dauern …":rzImgs.length?"Lese die Bilder …":useFetch?"Öffne den Beitrag …":"Lese das Rezept …"}`; $("#rzAiOut").innerHTML="";
+  const vorrat=state.spices.map(s=>s.name).join(", ");
+  const quelle=/instagram\./.test(link)?"Instagram":rzPdfs.length?"PDF":rzImgs.length?"Bild":"Eigenes Rezept";
+  const prompt=`Hier ${hasFiles?"sind Bilder/Dokumente mit einem oder mehreren Rezepten":"ist ein Rezept"}, z. B. aus einem Instagram-Beitrag, einer Website, einem Kochbuch, einem PDF oder als Foto/Screenshot. Mach daraus saubere Rezepte auf Deutsch (übersetze, falls nötig). Übernimm Mengen und Schritte so, wie sie dort stehen – nichts erfinden, nichts weglassen. Geht ein Rezept über mehrere Seiten oder Bilder, fasse es zu einem Rezept zusammen. Hashtags, Emojis, Werbung und „Link in Bio“ weglassen. Steht kein Titel da, gib einen kurzen passenden.
+${useFetch?`Öffne dazu den Link mit dem Werkzeug web_fetch und lies die Beschreibung des Beitrags: ${link}\nWenn die Seite nicht lesbar ist oder dort kein Rezept steht, erfinde nichts, sondern gib eine leere Liste zurück.`:""}
+Höchstens 15 Rezepte; gibt es mehr, nimm die ersten 15 und trage in "weitere" ein, wie viele noch fehlen.
+"gewuerze": je Rezept höchstens 3 Namen exakt aus diesem Vorrat, die im Rezept vorkommen oder sehr gut dazu passen, sonst leer. Vorrat: ${vorrat||"(leer)"}
 ${textOnly?`\nText:\n"""${textOnly.slice(0,8000)}"""`:""}
 
 Antworte am Ende ausschließlich mit JSON:
-{"titel":"","beschreibung":"ein kurzer Satz","zeit":"","portionen":"","zutaten":["Menge + Zutat"],"schritte":["Schritt"],"gewuerze":[""]}
-Wenn kein Rezept erkennbar ist: {"titel":"","zutaten":[],"schritte":[]}`;
+{"rezepte":[{"titel":"","beschreibung":"ein kurzer Satz","zeit":"","portionen":"","zutaten":["Menge + Zutat"],"schritte":["Schritt"],"gewuerze":[""]}],"weitere":0}
+Wenn kein Rezept erkennbar ist: {"rezepte":[]}`;
   const fail=(m)=>{ $("#rzAiOut").innerHTML=`<div class="card warn" style="margin:12px 0 0">${m}</div>`; $("#rzAdd").open=true; };
   try{
     let r;
@@ -769,14 +784,24 @@ Wenn kein Rezept erkennbar ist: {"titel":"","zutaten":[],"schritte":[]}`;
       catch(err){ if(err?.code==="auth"||err?.code==="credit"||err?.code==="network") throw err; blocks=[]; }
       try{ r=parseJSON(blocks.filter(b=>b.type==="text").map(b=>b.text).join("")); }catch(_){ r=null; }
     } else {
-      r=await sample.json(prompt, { images: rzImgs, modelTier:"default" });
+      r=await sample.json(prompt, { images: rzImgs, pdfs: rzPdfs, maxTokens: hasFiles?16000:4096 });
     }
-    if(!r?.titel || !((r.zutaten||[]).length || (r.schritte||[]).length)){
-      if(useFetch) fail(`<b>Den Beitrag konnte die KI nicht lesen</b> – Instagram zeigt Beiträge oft nur angemeldet.<br>So klappt es trotzdem: Mach 1–3 Screenshots von der Beschreibung (bzw. vom Rezept im Video) und teile die Screenshots an Gewürz-Kompass – oder füge sie hier über „🖼️ Screenshots hinzufügen“ ein. Der Link bleibt gespeichert.`);
-      else fail(`Darin konnte ich kein Rezept erkennen. Du kannst es trotzdem „Ohne KI so speichern“.`);
+    const recs=(Array.isArray(r?.rezepte)?r.rezepte:(r?.titel?[r]:[])).filter(okRecipe);
+    recs.forEach(x=>x.gewuerze=(x.gewuerze||[]).map(n=>findSpice(n)?.name).filter(Boolean));
+    if(!recs.length){
+      if(useFetch) fail(`<b>Den Beitrag konnte die KI nicht lesen</b> – Instagram zeigt Beiträge oft nur angemeldet.<br>So klappt es trotzdem: Mach 1–3 Screenshots von der Beschreibung (bzw. vom Rezept im Video) und teile die Screenshots an Gewürz-Kompass – oder füge sie hier über „🖼️ Bilder oder PDF hinzufügen“ ein. Der Link bleibt gespeichert.`);
+      else fail(`Darin konnte ich kein Rezept erkennen.${hasFiles?" Versuch ein schärferes Foto bzw. ein PDF mit echtem Text.":" Du kannst es trotzdem „Ohne KI so speichern“."}`);
+    } else if(recs.length===1){
+      if(storeRecipe({ ...recs[0], link, quelle, force:true })) rzDone();
     } else {
-      r.gewuerze=(r.gewuerze||[]).map(n=>findSpice(n)?.name).filter(Boolean);
-      if(storeRecipe({ ...r, link, quelle:/instagram\./.test(link)?"Instagram":"Eigenes Rezept", force:true })){ rzDone(); }
+      const more=+r?.weitere||0;
+      $("#rzAiOut").innerHTML=`<p class="muted" style="margin:12px 0 0"><b>${recs.length} Rezepte gefunden</b>${more?` (und noch ${more} weitere – die kannst du danach in einem zweiten Durchgang holen, z. B. mit den restlichen Seiten)`:""}. Abwählen, was du nicht willst:</p>`
+        + recs.map((x,i)=>{ const dup=isSaved(x.titel); return `<div class="heftrec"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" ${dup?"":"checked"} data-ri="${i}"> <b>${esc(x.titel)}</b></label>
+          <div class="muted" style="font-size:13px;margin-top:4px">${(x.zutaten||[]).length} Zutaten · ${(x.schritte||[]).length} Schritte${x.gewuerze.length?` · 🫙 ${x.gewuerze.map(esc).join(", ")}`:""}${dup?" · <b>schon gespeichert</b>":""}</div></div>`; }).join("")
+        + `<button class="btn" id="rzSaveAll">Ausgewählte speichern</button>`;
+      $("#rzSaveAll").onclick=()=>{ let n=0;
+        $("#rzAiOut").querySelectorAll("[data-ri]:checked").forEach(c=>{ if(storeRecipe({ ...recs[+c.dataset.ri], link, quelle, force:true })) n++; });
+        if(n){ rzDone(); toast(`${n} Rezepte gespeichert`); } else toast("Nichts ausgewählt"); };
     }
   }catch(err){ fail(esc(err?.message||"Da ist etwas schiefgelaufen. Bitte nochmal versuchen.")); }
   rzBusy=false; btn.disabled=false; btn.textContent="Mit KI übernehmen";
@@ -787,18 +812,18 @@ $("#rzAi").onclick=importRecipe;
 async function receiveShare(){
   const q=new URLSearchParams(location.search);
   if(!q.has("shared") && !q.has("share-text") && !q.has("share-url")) return;
-  let data={ title:q.get("share-title")||"", text:q.get("share-text")||"", url:q.get("share-url")||"" }, imgs=[];
+  let data={ title:q.get("share-title")||"", text:q.get("share-text")||"", url:q.get("share-url")||"" }, files=[];
   try{ const c=await caches.open("gk-share"); const m=await c.match("share.json"); if(m){ data=await m.json();
-      for(let i=0;i<(data.files||0);i++){ const f=await c.match("img"+i); if(f) imgs.push(await f.blob()); }
+      for(let i=0;i<(data.files||0);i++){ const f=await c.match("img"+i); if(f){ const b=await f.blob(); files.push(new File([b], (data.names||[])[i]||("datei"+i), {type:b.type})); } }
       for(const k of await c.keys()) await c.delete(k); } }catch(_){}
   history.replaceState(null,"",location.pathname);
   const link=data.url||firstUrl(data.text);
   let text=[data.title, data.text].filter(Boolean).join("\n").replace(link,"").trim();
+  if(files.length && /^\S+\.(pdf|jpe?g|png|heic)$/i.test(text)) text="";
   show("recipes"); $("#rzAdd").open=true;
   $("#rzText").value=text; $("#rzLink").value=link;
-  rzImgs=[]; try{ rzImgs=await Promise.all(imgs.map(shrinkBig)); }catch(_){}
-  rzThumbs();
-  if(!text && !link && !rzImgs.length){ toast("Beim Teilen kam nichts an"); return; }
+  rzImgs=[]; rzPdfs=[]; await addRzFiles(files);
+  if(!text && !link && !rzImgs.length && !rzPdfs.length){ toast("Beim Teilen kam nichts an"); return; }
   if(sample) importRecipe(); else toast("Ohne API-Schlüssel: „Ohne KI so speichern“ tippen");
 }
 
@@ -952,9 +977,10 @@ const SYS="Du antwortest ausschließlich mit gültigem JSON ohne Markdown-Codebl
 const sampleImpl = {
   async json(prompt, opts={}){
     const content=[];
+    for(const b of (opts.pdfs||[])) content.push({type:"document", source:{type:"base64", media_type:"application/pdf", data: await blobToB64(b)}});
     for(const b of (opts.images||[])) content.push({type:"image", source:{type:"base64", media_type:"image/jpeg", data: await blobToB64(b)}});
     content.push({type:"text", text: prompt});
-    const blocks = await callClaude({content, system:SYS, maxTokens: opts.images?.length ? 6000 : 4096});
+    const blocks = await callClaude({content, system:SYS, maxTokens: opts.maxTokens || (opts.images?.length ? 6000 : 4096)});
     return parseJSON(blocks.filter(b=>b.type==="text").map(b=>b.text).join(""));
   },
   async limits(){ return {images:true}; }

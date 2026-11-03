@@ -1,5 +1,5 @@
 // Gewürz-Kompass – Service Worker: macht die App installierbar und offline startbar.
-const CACHE = "gewuerz-kompass-v9";
+const CACHE = "gewuerz-kompass-v10";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
@@ -22,10 +22,10 @@ self.addEventListener("fetch", e => {
         const f = await e.request.formData();
         const c = await caches.open("gk-share");
         for (const k of await c.keys()) await c.delete(k);
-        const imgs = f.getAll("bilder").filter(x => x && x.size && /^image\//.test(x.type)).slice(0, 6);
+        const imgs = f.getAll("bilder").filter(x => x && x.size && (/^image\//.test(x.type) || x.type === "application/pdf" || /\.pdf$/i.test(x.name || ""))).slice(0, 8);
         for (let i = 0; i < imgs.length; i++) await c.put("img" + i, new Response(imgs[i], { headers: { "content-type": imgs[i].type } }));
         await c.put("share.json", new Response(JSON.stringify({
-          title: f.get("share-title") || "", text: f.get("share-text") || "", url: f.get("share-url") || "", files: imgs.length
+          title: f.get("share-title") || "", text: f.get("share-text") || "", url: f.get("share-url") || "", files: imgs.length, names: imgs.map(x => x.name || "")
         }), { headers: { "content-type": "application/json" } }));
       } catch (_) {}
       return Response.redirect(new URL("./?shared=1", self.registration.scope).href, 303);
